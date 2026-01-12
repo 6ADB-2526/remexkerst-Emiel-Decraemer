@@ -23,5 +23,32 @@ def oneUser (request, id):
     return JsonResponse(model_to_dict(gevrSpeler))
 
 def allUsers (request):
-    return JsonResponse(list(), safe=False)
+    alleSpelers = speler.objects.all().values()
+    return JsonResponse(list(alleSpelers), safe=False)
 
+def matchpoints (request, idSpeler, idMatch):
+    gevrSpeler = speler.objects.get(pk = idSpeler)
+    gevrMatch = match_punten.objects.all().values(match_punten.punten, id).filter(pk = idMatch)
+    dictSpeler = model_to_dict(gevrSpeler)
+    dictPunten = model_to_dict(gevrMatch)
+
+    retResultaat = dictSpeler | dictPunten
+
+    return JsonResponse(retResultaat, safe=False)
+
+@csrf_exempt
+def createMatch (request):
+    post_data =  json.loads(request.body.decode('utf-8'))
+
+    nieuweMatch = match_punten()
+    nieuweMatch.nummerSpeler = post_data["nummerSpeler"]
+    nieuweMatch.punten = post_data["punten"]
+    nieuweMatch.matchCode = post_data["matchCode"]
+    nieuweMatch.save()
+    return HttpResponse("match aangemaakt")
+
+def totResultaat (request, id):
+    totaalPunten = match_punten.objects.all().values(id, match_punten.punten).filter(pk = id)
+    for punt in totaalPunten:
+        retPunten += totaalPunten.punten
+    return JsonResponse(model_to_dict(totaalPunten))
